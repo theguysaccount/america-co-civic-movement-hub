@@ -12,7 +12,7 @@ on:
   schedule:
     - cron: "17 11 * * *"   # daily 11:17 UTC, after the day's Federal Register is published
     - cron: "43 17 * * *"   # backstop 17:43 UTC: reads again if the first run was skipped or a source failed
-    - cron: "5,25,45 * * * *"   # TEMPORARY: proves the schedule trigger end to end; removed after one passing run
+    - cron: "5,25,45 * 10,11 11 *"   # TEMPORARY (fires only on 10 and 11 November): proves the schedule trigger; removed after one passing run
   push:
     branches: [main]
     paths-ignore: ["data/**", "**.md", "docs/**", "LICENSE", ".github/ISSUE_TEMPLATE/**"]

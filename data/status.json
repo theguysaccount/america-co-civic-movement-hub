@@ -8,14 +8,14 @@
   "ok": true
  },
  "comments": {
-  "checked_at": "2026-11-10T10:34:19Z",
+  "checked_at": "2026-11-10T18:18:19Z",
   "error": "",
-  "last_changed": "2026-11-10T10:34:19Z",
-  "last_success": "2026-11-10T10:34:19Z",
-  "note": "957 documents open for comment on 2026-11-10; 0 new since the last read",
+  "last_changed": "2026-11-10T18:18:19Z",
+  "last_success": "2026-11-10T18:18:19Z",
+  "note": "980 documents open for comment on 2026-11-10; 23 new since the last read",
   "ok": true
  },
- "http_calls": 4,
+ "http_calls": 1,
  "treasury": {
   "checked_at": "2026-11-10T10:34:19Z",
   "error": "",

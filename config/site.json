@@ -1,0 +1,18 @@
+{
+  "name": "America.co Public Tools",
+  "short": "Public Tools",
+  "family": "America.co",
+  "tagline": "Three free public tools with no account: a receipt for your federal taxes, every federal rule open for public comment, and a clear FOIA request you can send today.",
+  "repo": "theguysaccount/america-co-civic-movement-hub",
+  "default_url": "https://theguysaccount.github.io/america-co-civic-movement-hub",
+  "indexable": false,
+  "original_url": "https://america.co/taxpayer-receipt",
+  "user_agent": "AmericaPublicToolsStatic/1.0 (+https://github.com/theguysaccount/america-co-civic-movement-hub)",
+  "first_fiscal_year": 2015,
+  "min_fiscal_years": 5,
+  "min_comment_documents": 60,
+  "max_comment_drop_share": 0.6,
+  "min_agency_list": 3,
+  "stale_after_hours": {"comments": 60, "treasury": 240, "agencies": 400},
+  "max_receipt_amount": 10000000
+}

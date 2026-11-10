@@ -1,0 +1,157 @@
+# Daily: read the Federal Register's open comment periods and Treasury's statement, then test,
+# build, guard, publish, and commit the data.
+#
+# Safe to re-run at any time: a source read a short while ago is not asked again, and a rebuild
+# only drops documents whose comment period has closed. Fails safe: a source that cannot be read,
+# or a Treasury statement whose lines do not add up, keeps its last good file (pages show the date
+# each source was last read); a failed test, guard or browser check stops before deploy, so the
+# last good site stays live.
+name: Refresh and deploy
+
+on:
+  schedule:
+    - cron: "17 11 * * *"   # daily 11:17 UTC, after the day's Federal Register is published
+    - cron: "43 17 * * *"   # backstop 17:43 UTC: reads again if the first run was skipped or a source failed
+    - cron: "5,25,45 * * * *"   # TEMPORARY: proves the schedule trigger end to end; removed after one passing run
+  push:
+    branches: [main]
+    paths-ignore: ["data/**", "**.md", "docs/**", "LICENSE", ".github/ISSUE_TEMPLATE/**"]
+  workflow_dispatch:
+    inputs:
+      refresh:
+        description: Read the sources before building (off = rebuild and deploy only)
+        type: boolean
+        default: true
+      force:
+        description: Read every source even if it was read a short while ago
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+  actions: write
+
+concurrency:
+  group: refresh
+  cancel-in-progress: false
+
+env:
+  # Cutover settings (repository variables). SITE_URL is the one base-URL setting.
+  SITE_URL: ${{ vars.SITE_URL || format('https://{0}.github.io/{1}', github.repository_owner, github.event.repository.name) }}
+  SITE_INDEXABLE: ${{ vars.SITE_INDEXABLE }}     # "true" at cutover; unset = staged (noindex, no sitemap, no IndexNow)
+  GOATCOUNTER_URL: ${{ vars.GOATCOUNTER_URL }}
+  SPONSOR_URL: ${{ vars.SPONSOR_URL }}
+  SPONSOR_NAME: ${{ vars.SPONSOR_NAME }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      indexnow: ${{ steps.ping.outputs.indexnow }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Read the sources (each fails on its own and keeps its last good file)
+        if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.refresh)
+        env:
+          FORCE: ${{ inputs.force }}
+        run: |
+          if [ "$FORCE" = "true" ]; then ARG="--force"; else ARG=""; fi
+          python3 -m civictools.refresh $ARG
+
+      - name: Tests
+        run: python3 -m unittest discover -s tests -t .
+
+      - name: Build the site
+        run: python3 -m civictools.build --site _site
+
+      - name: Share cards
+        run: python3 -m civictools.og --site _site
+
+      - name: Guard the build (arithmetic, sources, dates, links)
+        run: python3 -m civictools.guard _site
+
+      - name: Browser check (headless Chrome against the build)
+        run: python3 -m civictools.e2e _site
+
+      - name: Decide whether search engines need telling
+        id: ping
+        run: |
+          curl -fsS "$SITE_URL/urls.txt" -o prev-urls.txt || : > prev-urls.txt
+          if [ -s _site/urls.txt ] && { [ "$GITHUB_EVENT_NAME" != "schedule" ] || ! cmp -s prev-urls.txt _site/urls.txt; }; then
+            echo "indexnow=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "indexnow=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit the data
+        if: github.event_name != 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          if git diff --cached --quiet; then echo "No data changes."; exit 0; fi
+          git commit -q -m "data: sources read $(date -u +%Y-%m-%d)"
+          for i in 1 2 3; do
+            if git pull -q --rebase origin main && git push -q origin HEAD:main; then exit 0; fi
+            git rebase --abort 2>/dev/null || true
+            sleep $((i * 5))
+          done
+          echo "::warning::Could not push the data; the next run will read the sources again."
+
+      - name: Keep the schedules alive
+        if: github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: .github/scripts/keepalive.sh refresh.yml weekly.yml
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: urls
+          path: _site/urls.txt
+          retention-days: 7
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
+
+  after:
+    needs: [build, deploy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v8
+        with:
+          name: urls
+          path: urls
+      - name: Check the live site
+        run: |
+          for i in 1 2 3 4 5; do
+            if python3 -m civictools.selftest --site-url "$SITE_URL"; then exit 0; fi
+            echo "Live site not consistent yet; retrying in 30 s"; sleep 30
+          done
+          exit 1
+      - name: Tell IndexNow (skipped while staged; never fails the run)
+        if: always() && needs.build.outputs.indexnow == 'true'
+        run: python3 -m civictools.indexnow --urls urls/urls.txt || true

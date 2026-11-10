@@ -1,0 +1,21 @@
+{
+  "national-defense": "The military activities of the Department of Defense, the nuclear-weapons work of the Department of Energy, and other defense-related activities.",
+  "international-affairs": "Diplomacy and embassies, development and humanitarian aid, security assistance to other countries, and contributions to international organizations.",
+  "general-science-space-and-technology": "NASA's space programs, the National Science Foundation, and the Department of Energy's general science research.",
+  "energy": "Energy supply, conservation and research programs, emergency energy preparedness, and energy regulators.",
+  "natural-resources-and-environment": "Water projects, national parks and public lands, conservation, pollution control and cleanup, and weather and ocean services.",
+  "agriculture": "Farm income support such as crop insurance and commodity programs, plus agricultural research and services.",
+  "commerce-and-housing-credit": "Mortgage credit programs, deposit insurance, the Postal Service, and business and trade programs. Fees, premiums and loan repayments count here as negative spending, so this line can fall below zero.",
+  "transportation": "Highways and transit, aviation and air-traffic control, railroads, and water transportation.",
+  "community-and-regional-development": "Disaster relief and insurance, community development grants, and regional development programs.",
+  "education-training-employment-and-social-services": "Aid to schools, student loans and grants, job training, and social services. Changes in the estimated cost of federal student loans are recorded here and can move this line sharply from year to year.",
+  "health": "Medicaid, the Children's Health Insurance Program, health-insurance subsidies, medical research and public health agencies. Medicare is a separate line.",
+  "medicare": "Health insurance for people 65 and older and for people with certain disabilities, net of the premiums enrollees pay.",
+  "income-security": "Federal employee and military retirement, unemployment compensation, food and nutrition assistance, housing assistance, Supplemental Security Income, and refundable tax credits.",
+  "social-security": "Old-age and survivors insurance and disability insurance benefits, and the cost of running them.",
+  "veterans-benefits-and-services": "Disability compensation and pensions, veterans' health care, and education and housing benefits.",
+  "administration-of-justice": "Federal law enforcement, border security, courts, prosecutors, prisons, and grants to state and local justice systems.",
+  "general-government": "Congress, the White House, tax collection, federal buildings and personnel management, and general payments to states and territories.",
+  "net-interest": "Interest paid on the federal debt, minus interest the government receives.",
+  "undistributed-offsetting-receipts": "Collections not credited to any one program, such as agencies' payments toward their employees' retirement and royalties from offshore oil and gas leases. They are recorded as negative spending."
+}

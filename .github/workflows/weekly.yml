@@ -1,0 +1,65 @@
+# Weekly: run the tests, redo the receipt arithmetic from the data the live site publishes, check
+# the live pages, check that every source was read in time, and check that the official pages the
+# site links to still answer. If the live build or the comment list is stale (GitHub skipped the
+# daily runs), start "Refresh and deploy".
+# Reads this project's own site, plus one request to each official page it links. A failure emails
+# the repository owner.
+name: Weekly checks
+
+on:
+  schedule:
+    - cron: "29 13 * * 1"   # Monday 13:29 UTC
+    - cron: "15,35,55 * * * *"   # TEMPORARY: proves the schedule trigger end to end; removed after one passing run
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+env:
+  SITE_URL: ${{ vars.SITE_URL || format('https://{0}.github.io/{1}', github.repository_owner, github.event.repository.name) }}
+  SITE_INDEXABLE: ${{ vars.SITE_INDEXABLE }}
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Tests (including the receipt arithmetic)
+        run: python3 -m unittest discover -s tests -t .
+      - name: Live site, with the receipt recomputed from the published data
+        id: live
+        run: |
+          set +e
+          python3 -m civictools.selftest --site-url "$SITE_URL" | tee selftest.log
+          code=${PIPESTATUS[0]}
+          grep -q '^stale=true' selftest.log && echo "stale=true" >> "$GITHUB_OUTPUT"
+          exit $code
+      - name: Every source read successfully in time
+        id: fresh
+        if: always()
+        run: python3 -m civictools.refresh --check-fresh || { echo "stale=true" >> "$GITHUB_OUTPUT"; exit 1; }
+      - name: Start a refresh if the live build or a source is stale
+        if: always() && (steps.live.outputs.stale == 'true' || steps.fresh.outputs.stale == 'true')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          busy=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow refresh.yml --limit 5 --json status -q '[.[] | select(.status != "completed")] | length')
+          if [ "$busy" = "0" ]; then
+            gh workflow run refresh.yml --repo "$GITHUB_REPOSITORY" --ref main
+            echo "::warning::The live build or a source was stale; started Refresh and deploy."
+          fi
+      - name: Reference links (report; fails only on a link that is gone)
+        if: always()
+        run: |
+          python3 -m civictools.build --site _site > /dev/null
+          python3 -m civictools.linkcheck _site
+      - name: Keep the schedules alive
+        if: always() && github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: .github/scripts/keepalive.sh refresh.yml weekly.yml

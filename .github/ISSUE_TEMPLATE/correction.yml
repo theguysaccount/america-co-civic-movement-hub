@@ -1,0 +1,25 @@
+name: Report an error
+description: A page shows something its official source contradicts, or a tool does the wrong thing.
+title: "Correction: "
+labels: ["correction"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        These tools repeat official records: Treasury's Monthly Treasury Statement and the Federal Register.
+        If a page misstates its source, say so here. If the official record itself is wrong, only its publisher can fix it.
+        Please do not include personal data, and do not paste a FOIA request you would not want public.
+  - type: input
+    id: page
+    attributes:
+      label: Page address
+      placeholder: "/taxpayer-receipt/medicare/"
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What is wrong, and what does the official source say?
+      description: Link the official source.
+    validations:
+      required: true

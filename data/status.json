@@ -15,7 +15,7 @@
   "note": "981 documents open for comment on 2026-11-10; 2 new since the last read",
   "ok": true
  },
- "http_calls": 1,
+ "http_calls": 0,
  "treasury": {
   "checked_at": "2026-11-10T10:34:19Z",
   "error": "",

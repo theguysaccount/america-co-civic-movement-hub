@@ -130,9 +130,12 @@ class Refresh(fixtures.TempData, unittest.TestCase):
 
     def test_a_second_run_soon_after_asks_nothing_again(self):
         self.run_with(fixtures.when(10, 11))
+        files = {name: fixtures.text(refresh.path(name)) for name in refresh.SOURCES + ["status"]}
         status, http = self.run_with(fixtures.when(10, 12))
         self.assertEqual(http.calls, 0)
         self.assertEqual(status["comments"]["last_success"], "2031-03-10T11:00:00Z")
+        for name, before in files.items():
+            self.assertEqual(fixtures.text(refresh.path(name)), before, f"{name}: a run that asked nothing must leave nothing to commit")
         _, http = self.run_with(fixtures.when(10, 17))
         self.assertTrue(any("documents.json" in u for u in http.log), "the comment list is read again later the same day")
         self.assertFalse(any("mts_table" in u for u in http.log), "the Treasury statement is not")

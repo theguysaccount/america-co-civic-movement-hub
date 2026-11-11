@@ -11,6 +11,7 @@
 - **FOIA request builder.** Six answers become a request letter with fee category, fee waiver and expedited-processing
   wording. Runs in the browser; sends and stores nothing.
 - Daily refresh, weekly arithmetic, live-site and link checks, keep-alive. 38 tests. Sources and read dates on every number.
+  Both scheduled workflows have passed on GitHub's own schedule trigger (first on 2026-11-10), not only by hand.
 
 ## What the original has that this copy does not
 - Every Federal Dollar (needs the `/api/usaspending` server route), Bill Truth, the election calendar, the agency atlas,

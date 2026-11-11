@@ -9,7 +9,6 @@ name: Weekly checks
 on:
   schedule:
     - cron: "29 13 * * 1"   # Monday 13:29 UTC
-    - cron: "15,35,55 * 10,11 11 *"   # TEMPORARY (fires only on 10 and 11 November): proves the schedule trigger; removed after one passing run
   workflow_dispatch:
 
 permissions:

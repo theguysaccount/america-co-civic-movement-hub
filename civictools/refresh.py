@@ -92,6 +92,7 @@ def run(only=None, now=None, http=None, force=False):
     cfg = load_config()
     http = http or Http(cfg)
     status = read_json(path("status"), {}) or {}
+    asked = 0
     for name in SOURCES:
         if only and name not in only:
             continue
@@ -100,6 +101,7 @@ def run(only=None, now=None, http=None, force=False):
         if not force and st.get("ok") and last and now - last < MIN_GAP[name]:
             print(f"{name}: read {st['last_success']}; not asking again yet", flush=True)
             continue
+        asked += 1
         st["checked_at"] = iso(now)
         try:
             res = READERS[name](http, cfg, now)
@@ -112,8 +114,9 @@ def run(only=None, now=None, http=None, force=False):
                 traceback.print_exc()
         status[name] = st
         print(f"{name}: {'ok ' + st.get('note', '') if st['ok'] else 'FAILED ' + st['error']}", flush=True)
-    status["http_calls"] = http.calls
-    write_json(path("status"), status)
+    if asked:       # a run that asked nothing leaves every file as it was, so there is nothing to commit
+        status["http_calls"] = http.calls
+        write_json(path("status"), status)
     return status
 
 

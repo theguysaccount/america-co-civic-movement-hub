@@ -25,11 +25,17 @@ since the build and shows a warning once the build is more than two days old.
 `.github/scripts/keepalive.sh` (re-enables workflows GitHub paused for inactivity; empty commit after 45 quiet days).
 
 **GitHub skips scheduled runs on this account.** Two daily slots, per-source read times and the weekly stale check
-mean no run has to fire at a set time.
+mean no run has to fire at a set time. The times in the table are the earliest a run can start, and a new or changed
+schedule can take hours to start at all: on 2026-11-10 the first scheduled runs of both workflows started about eight
+hours after their schedules were last pushed. Both passed. A run that finds every source read recently asks nothing
+and commits nothing.
 
 ## What to watch
 - **Actions → Refresh and deploy.** Red means the site was not updated; the previous site is still live. The failing
   step says why. Guard prints each problem.
+- **A deploy that times out.** GitHub Pages sometimes stalls while taking in a build. The deploy job offers the same
+  build a second time before failing, and the previous site stays live either way. If both attempts fail, re-run the
+  failed job from the Actions tab.
 - **`data/status.json`** (also on the site's Sources page): per source `ok`, `last_success`, `error`, `note`.
 - **October and November.** Treasury publishes the September statement about mid-October. The receipt moves to the
   new fiscal year by itself on the next daily run. Check that the new year's negative lines still read sensibly in

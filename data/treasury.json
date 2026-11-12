@@ -3663,7 +3663,7 @@
   }
  },
  "latest": "2026",
- "retrieved_at": "2026-11-11T18:43:30Z",
+ "retrieved_at": "2026-11-12T18:58:15Z",
  "source": {
   "api": [
    "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/mts/mts_table_9?filter=record_calendar_month:eq:09&sort=-record_date,src_line_nbr&page[size]=5000",

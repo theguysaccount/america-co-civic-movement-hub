@@ -2,8 +2,8 @@
 
 Everything runs on GitHub Actions in `theguysaccount/america-co-civic-movement-hub`. No human has a job here.
 
-- This site: https://theguysaccount.github.io/america-co-civic-movement-hub/. Still staged (noindex) on 2026-11-22,
-  because it has no address of its own yet. It will sit beside the original and never replace it.
+- This site: https://theguysaccount.github.io/america-co-civic-movement-hub/. Staged (noindex) on 2026-11-22 and
+  without an address of its own yet. It sits beside the original and never replaces it.
 - The original: https://america.co (`/taxpayer-receipt`, `/public-comment-deadlines`, `/comment-calendar`,
   `/foia-request-builder`), on Vercel. Not touched, and its repositories are not this one.
 
@@ -92,7 +92,7 @@ To give the site `tools.america.co` (any other name works the same way):
    `gh workflow run "Weekly checks" -R theguysaccount/america-co-civic-movement-hub`
    It fails if the live pages, robots.txt or sitemap are not what this repository is configured for.
 
-That is all. At its own address the site is live: there is no separate indexing step.
+Moving the address does not index the site. That is a separate switch, below.
 
 To go back to the github.io address: clear the custom domain with
 `gh api -X PUT repos/theguysaccount/america-co-civic-movement-hub/pages --input - <<< '{"cname":null}'`, run step 4, then remove the DNS record.
@@ -102,11 +102,14 @@ sign-in: add the same CNAME there and use that name in steps 2 to 5.
 
 ## What search engines may index
 
-- **Staged at a github.io address, live at its own.** Staged means every page is `noindex`, robots.txt disallows
-  everything, there is no sitemap and IndexNow is skipped. `"indexable": "auto"` in `config/site.json` is that rule.
-- **To go live at the github.io address without waiting for a name:**
-  `gh variable set SITE_INDEXABLE --body true -R theguysaccount/america-co-civic-movement-hub`, then step 4. `false` takes a live site out of search.
-- **Pages America.co already serves stay `noindex` when the site is live.** They also stay out of the sitemap and are
+- **Today: nothing.** `"indexable": false` in `config/site.json` and no `SITE_INDEXABLE` variable, so every page is
+  `noindex`, robots.txt disallows everything, there is no sitemap and IndexNow is skipped.
+- **One switch indexes the pages only this site has:**
+  `gh variable set SITE_INDEXABLE --body true -R theguysaccount/america-co-civic-movement-hub`, then
+  `gh workflow run "Refresh and deploy" -R theguysaccount/america-co-civic-movement-hub -f refresh=false`. It works at the github.io address and at the site's
+  own. Deleting the variable and running the workflow again takes the site back out. Nothing on America.co has to
+  change first: the pages that repeat America.co stay out of search by themselves.
+- **Pages America.co already serves stay `noindex` even then.** They also stay out of the sitemap and are
   never sent to IndexNow, and each shows a line that points to America.co's page. They are listed in
   `config/site.json` under `duplicates_of_original`:
   - `/taxpayer-receipt/`, because America.co has `/taxpayer-receipt`;
@@ -117,8 +120,8 @@ sign-in: add the same CNAME there and use that name in steps 2 to 5.
   the 19 spending-line pages with their history since fiscal year 2015 (America.co's `/taxpayer-receipt/<line>`
   answers 404), sources, about and data. That is 23 pages.
 - **When America.co starts serving something this site indexes**, such as a page per spending line, add that path to
-  `duplicates_of_original` and push. A key ending in `*` covers every path under it. The guard refuses a live build
-  in which a listed duplicate is indexable or in the sitemap, or an indexable page is missing from the sitemap.
+  `duplicates_of_original` and push. A key ending in `*` covers every path under it. The guard refuses an indexable
+  build in which a listed duplicate is indexable or in the sitemap, or an indexable page is missing from the sitemap.
   America.co grows quickly: its comment calendar did not exist when this site was built two weeks earlier.
 
 ## Keys Jack can turn later

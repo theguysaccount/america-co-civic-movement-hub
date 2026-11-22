@@ -49,7 +49,7 @@ def main(argv=None):
     if code != 200:
         print(f"FAIL home page answered {code}")
         return 1
-    want_index = indexable(cfg, a.site_url)
+    want_index = indexable(cfg)
     has_noindex = b'<meta name="robots" content="noindex' in home
     if want_index and bool(duplicate_of(cfg, "/")) != has_noindex:
         problems.append("the site is configured as indexable but the live home page's robots tag does not match")

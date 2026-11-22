@@ -5,8 +5,8 @@
   "tagline": "Three free public tools with no account: a receipt for your federal taxes, every federal rule open for public comment, and a clear FOIA request you can send today.",
   "repo": "theguysaccount/america-co-civic-movement-hub",
   "default_url": "https://theguysaccount.github.io/america-co-civic-movement-hub",
-  "indexable": "auto",
-  "indexable_why": "auto = staged (noindex everywhere) at a github.io address, live at the site's own address. The repository variable SITE_INDEXABLE=true|false decides by hand instead.",
+  "indexable": false,
+  "indexable_why": "false = staged: noindex on every page, robots.txt disallows everything, no sitemap, no IndexNow. The repository variable SITE_INDEXABLE=true makes the site indexable; the pages listed under duplicates_of_original stay noindex even then.",
   "original_name": "America.co",
   "original_url": "https://america.co/taxpayer-receipt",
   "duplicates_of_original": {

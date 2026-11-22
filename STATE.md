@@ -1,9 +1,9 @@
 # STATE (2026-11-22)
 
-**Staged:** https://theguysaccount.github.io/america-co-civic-movement-hub/ (noindex). It goes live when it gets an
-address of its own, beside america.co, which is unchanged. That needs one DNS record in Vercel (OPERATIONS.md).
-Once live, the receipt tool, the comment-deadline pages and the FOIA builder stay out of search because America.co
-serves its own; the home page, the 19 spending-line pages, sources, about and data are indexable.
+**Staged:** https://theguysaccount.github.io/america-co-civic-movement-hub/ (noindex), beside america.co, which is
+unchanged. Its own address needs one DNS record in Vercel, and indexing is one variable (both in OPERATIONS.md).
+Once indexable, the receipt tool, the comment-deadline pages and the FOIA builder still stay out of search because
+America.co serves its own; the home page, the 19 spending-line pages, sources, about and data are this site's own.
 
 ## Works
 - **Taxpayer receipt.** Any amount split across the 19 budget functions or 32 agency lines of Treasury's final fiscal

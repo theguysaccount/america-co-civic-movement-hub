@@ -4,8 +4,8 @@
    The boards, movement pages and everything that needs a database or a server route are left to america.co.
 2. **Beside the original, never in its place.** `america.co` serves all three tools, so the first build was staged:
    `noindex`, no sitemap, no IndexNow. Jack's standing rule of 2026-11-22 is "never replace, only build on top", so
-   there is no cutover. The site is staged at a github.io address and live at its own, and the pages America.co
-   already serves stay `noindex` and out of the sitemap either way: the receipt tool, every comment-deadline page
+   there is no cutover. The site stays staged until `SITE_INDEXABLE=true` is set, and the pages America.co
+   already serves stay `noindex` and out of the sitemap even then: the receipt tool, every comment-deadline page
    (America.co added a comment calendar with agency, month and notice pages in November 2026) and the FOIA builder.
    Each points to America.co's page. Only the home page, the 19 spending-line pages, sources, about and data are
    this site's own. The address is read from the Pages settings on every run, so one setting moves the site

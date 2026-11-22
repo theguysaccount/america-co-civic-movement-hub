@@ -160,13 +160,14 @@ class Built(fixtures.TempData, unittest.TestCase):
                 if fn.endswith(".html"):
                     self.assertIn('<meta name="robots" content="noindex, nofollow">', page(dirpath, fn), fn)
 
-    def test_its_own_address_takes_the_site_live_and_pages_the_original_serves_stay_out_of_search(self):
-        os.environ["SITE_URL"] = "https://tools.example.org"        # the one setting; SITE_INDEXABLE is not set
+    def test_an_indexable_site_keeps_pages_the_original_serves_out_of_search(self):
+        os.environ.update(SITE_URL="https://tools.example.org", SITE_INDEXABLE="true")
         try:
             out = build.build(self.site, now=fixtures.when(10, 12))
             errors, _ = guard.check(self.site)
         finally:
             os.environ.pop("SITE_URL", None)
+            os.environ.pop("SITE_INDEXABLE", None)
         self.assertTrue(out["indexable"])
         self.assertEqual([e for e in errors if "og/" not in e], [], "the guard's own live-site rules hold")
         home = page(self.site, "index.html")
@@ -200,18 +201,22 @@ class Built(fixtures.TempData, unittest.TestCase):
         self.assertIn("https://tools.example.org/embed/receipt/", page(self.site, "taxpayer-receipt/index.html"))
         self.assertIn('"base":"https://tools.example.org"', page(self.site, "taxpayer-receipt/index.html"))
 
-    def test_the_indexing_switch_can_also_be_set_by_hand(self):
-        out = self.build(SITE_URL="https://tools.example.org", SITE_INDEXABLE="false")
-        self.assertFalse(out["indexable"], "held back at its own address")
+    def test_moving_the_address_does_not_index_the_site_and_the_switch_does(self):
+        out = self.build(SITE_URL="https://tools.example.org")
+        self.assertFalse(out["indexable"], "its own address alone leaves the copy staged")
+        self.assertIn('<link rel="canonical" href="https://tools.example.org/taxpayer-receipt/medicare/">', page(self.site, "taxpayer-receipt/medicare/index.html"))
         self.assertIn('<meta name="robots" content="noindex, nofollow">', page(self.site, "taxpayer-receipt/medicare/index.html"))
         self.assertFalse(os.path.exists(os.path.join(self.site, "sitemap.xml")))
+        self.assertEqual(page(self.site, "robots.txt"), "User-agent: *\nDisallow: /\n")
+        out = self.build(SITE_URL="https://tools.example.org", SITE_INDEXABLE="false")
+        self.assertFalse(out["indexable"])
         out = self.build(SITE_INDEXABLE="true")
-        self.assertTrue(out["indexable"], "live at the github.io address")
+        self.assertTrue(out["indexable"], "the switch decides, at any address")
         self.assertNotIn("noindex", page(self.site, "taxpayer-receipt/medicare/index.html"))
         self.assertIn('<meta name="robots" content="noindex, follow">', page(self.site, "taxpayer-receipt/index.html"), "still a duplicate of the original")
 
     def test_the_guard_refuses_a_live_build_that_would_index_a_duplicate_or_hide_a_page(self):
-        os.environ["SITE_URL"] = "https://tools.example.org"
+        os.environ.update(SITE_URL="https://tools.example.org", SITE_INDEXABLE="true")
         try:
             build.build(self.site, now=fixtures.when(10, 12))
             path = os.path.join(self.site, "foia-request-builder", "index.html")
@@ -230,6 +235,7 @@ class Built(fixtures.TempData, unittest.TestCase):
             self.assertTrue(any("taxpayer-receipt/index.html: a noindex page is listed in the sitemap" in e for e in errors), errors[:5])
         finally:
             os.environ.pop("SITE_URL", None)
+            os.environ.pop("SITE_INDEXABLE", None)
 
     def test_duplicate_pages_point_to_the_original_while_staged_too(self):
         self.build()

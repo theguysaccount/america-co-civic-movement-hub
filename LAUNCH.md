@@ -8,10 +8,10 @@ it has an address of its own. Nothing has been posted, sent or submitted anywher
 - The IndexNow key file is published but nothing is submitted while the site is staged.
 
 ## Going live
-The site goes beside America.co and never replaces it. It is live from the moment it has its own address: add
-`tools.america.co` as a CNAME to GitHub Pages in Vercel DNS, set the Pages custom domain, run the workflow. The
-exact commands are in OPERATIONS.md under "Where the site lives". The pages America.co already serves (the receipt
-tool, the comment deadlines, the FOIA builder) stay out of search and point to America.co.
+The site goes beside America.co and never replaces it. Two separate steps, both in OPERATIONS.md: its own address
+(`tools.america.co` as a CNAME to GitHub Pages in Vercel DNS, the Pages custom domain, a rebuild) and the indexing
+switch (`SITE_INDEXABLE=true`). The pages America.co already serves (the receipt tool, the comment deadlines, the
+FOIA builder) stay out of search either way and point to America.co.
 
 ## Once live: the search surfaces
 | Query pattern | Page |

@@ -2,9 +2,14 @@
 
 1. **Three tools only.** The brief is the no-signup civic tools: Taxpayer Receipt, comment deadlines, FOIA builder.
    The boards, movement pages and everything that needs a database or a server route are left to america.co.
-2. **Staged, not launched.** `america.co` serves all three tools today, so this copy is `noindex`, has no sitemap and
-   skips IndexNow. Two settings switch it over (OPERATIONS.md). Jack decides. Nothing in america.co's repositories or
-   DNS was touched.
+2. **Beside the original, never in its place.** `america.co` serves all three tools, so the first build was staged:
+   `noindex`, no sitemap, no IndexNow. Jack's standing rule of 2026-11-22 is "never replace, only build on top", so
+   there is no cutover. The site is staged at a github.io address and live at its own, and the pages America.co
+   already serves stay `noindex` and out of the sitemap either way: the receipt tool, every comment-deadline page
+   (America.co added a comment calendar with agency, month and notice pages in November 2026) and the FOIA builder.
+   Each points to America.co's page. Only the home page, the 19 spending-line pages, sources, about and data are
+   this site's own. The address is read from the Pages settings on every run, so one setting moves the site
+   (OPERATIONS.md). Nothing in america.co's repositories or DNS was touched.
 3. **Treasury's statement instead of hand-entered CBO figures.** The original's receipt uses eight CBO categories typed
    in for fiscal year 2025. An automated job cannot keep those current: cbo.gov refuses automated requests. Treasury's
    Monthly Treasury Statement has a keyless API, is the government's own record of outlays, and its final September
@@ -40,5 +45,6 @@
 16. **Budget-function descriptions are plain summaries** written for this site and labelled as such.
 
 ## Questions for Jack (nothing is blocked on them)
-- Should these pages go to `tools.america.co`, replace the three original pages, or stay a staged mirror?
+- Answered 2026-11-22: beside the original on a name of its own, never replacing it. `tools.america.co` needs one DNS
+  record in Vercel, which no session can add. Who adds it, or should the site use `notaxation.org` instead?
 - Should the live receipt on america.co move to Treasury's fiscal year 2026 figures? It still shows 2025.

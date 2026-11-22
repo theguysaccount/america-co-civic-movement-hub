@@ -1,28 +1,29 @@
 # LAUNCH
 
-This build is **staged**. It is public at its GitHub Pages address so it can be reviewed, but it tells search engines
-to stay away, because america.co serves these tools today. Nothing has been posted, sent or submitted anywhere.
+This build is **staged**. It is public at its GitHub Pages address, but it tells search engines to stay away until
+it has an address of its own. Nothing has been posted, sent or submitted anywhere.
 
 ## What is live
 - https://theguysaccount.github.io/america-co-civic-movement-hub/ (noindex, robots.txt disallows crawling, no sitemap).
 - The IndexNow key file is published but nothing is submitted while the site is staged.
 
-## Going live (Jack's decision)
-The exact DNS record and the two settings are in OPERATIONS.md under "Cutover". In short: add `tools.america.co` as a
-CNAME to GitHub Pages in Vercel DNS, set `SITE_URL`, and set `SITE_INDEXABLE=true`.
+## Going live
+The site goes beside America.co and never replaces it. It is live from the moment it has its own address: add
+`tools.america.co` as a CNAME to GitHub Pages in Vercel DNS, set the Pages custom domain, run the workflow. The
+exact commands are in OPERATIONS.md under "Where the site lives". The pages America.co already serves (the receipt
+tool, the comment deadlines, the FOIA builder) stay out of search and point to America.co.
 
-## Once indexed: the search surfaces
+## Once live: the search surfaces
 | Query pattern | Page |
 |---|---|
-| "where do my taxes go", "federal taxpayer receipt", "tax receipt calculator" | `/taxpayer-receipt/` |
 | "how much does the federal government spend on [Medicare, defense, interest…]" | `/taxpayer-receipt/<line>/` (19 pages) |
-| "[agency] proposed rules open for comment", "[agency] comment period" | `/comment-deadlines/agency/<agency>/` |
-| "federal rules open for public comment", "comment periods closing this week" | `/comment-deadlines/`, `/closing-soon/`, `/proposed-rules/` |
-| "FOIA request template", "how to write a FOIA request" | `/foia-request-builder/` |
+| "federal outlays by function csv", "federal spending by function data" | `/data/` |
+| "america.co public tools", "free civic tools no account" | `/` |
 
-Every page carries real figures or records with their source and date. Agency pages exist only with three or more
-open documents; the embed is never indexed. `WebApplication`, `FAQPage`, `Dataset` and `WebSite` structured data are
-in place.
+The receipt tool, the comment-deadline pages and the FOIA builder are not search surfaces here: America.co serves
+its own, so these stay `noindex` and each points to America.co's page. Every indexable page carries real figures
+with their source and date. The embed is never indexed. `WebApplication`, `FAQPage`, `Dataset` and `WebSite`
+structured data are in place.
 
 ## Loops built into the product
 - **Receipt share link**: carries the amount after the `#`; opens the same receipt for whoever follows it.

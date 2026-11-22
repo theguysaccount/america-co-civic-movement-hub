@@ -18,7 +18,7 @@ from datetime import timedelta
 from decimal import Decimal
 
 from . import receipt
-from .common import eastern_today, indexable, load_config, now_utc, parse_iso, site_url
+from .common import duplicate_of, eastern_today, indexable, load_config, now_utc, parse_iso, site_url
 
 
 def fetch(url, ua):
@@ -49,10 +49,10 @@ def main(argv=None):
     if code != 200:
         print(f"FAIL home page answered {code}")
         return 1
-    want_index = indexable(cfg)
+    want_index = indexable(cfg, a.site_url)
     has_noindex = b'<meta name="robots" content="noindex' in home
-    if want_index and has_noindex:
-        problems.append("the site is configured as indexable but the live home page is noindex")
+    if want_index and bool(duplicate_of(cfg, "/")) != has_noindex:
+        problems.append("the site is configured as indexable but the live home page's robots tag does not match")
     if not want_index and not has_noindex:
         problems.append("the site is configured as staged but the live home page is missing noindex")
     code, body = fetch(base + "/build.json", ua)
@@ -117,10 +117,23 @@ def main(argv=None):
             problems.append(f"{p} answered {c}")
         elif p.startswith("/taxpayer-receipt/") and b"<time datetime=" not in body:
             problems.append(f"{p} carries no read date")
+    code, robots = fetch(base + "/robots.txt", ua)
     if not want_index:
-        code, robots = fetch(base + "/robots.txt", ua)
-        if b"Disallow: /" not in robots:
+        if b"Disallow: /\n" not in robots:
             problems.append("staged site's robots.txt does not disallow crawling")
+    else:
+        if f"Sitemap: {base}/sitemap.xml".encode() not in robots:
+            problems.append("the live site's robots.txt does not name its sitemap")
+        code, sitemap = fetch(base + "/sitemap.xml", ua)
+        listed = sitemap.decode("utf-8", "replace")
+        if code != 200 or "<loc>" not in listed:
+            problems.append(f"the live site's sitemap did not load (status {code})")
+        for exact in sorted({path.rstrip("*") for path in cfg.get("duplicates_of_original") or {}}):
+            if f"<loc>{base}{exact}</loc>" in listed:
+                problems.append(f"{exact} is a page the original already serves, yet the sitemap lists it")
+            code, body = fetch(base + exact, ua)
+            if code == 200 and b'<meta name="robots" content="noindex' not in body:
+                problems.append(f"{exact} is a page the original already serves, yet the live page is indexable")
     for p in problems[:40]:
         print("FAIL", p)
     print(f"selftest: {len(results)} URLs checked, receipt arithmetic redone from the published data, {len(docs)} open documents, {len(problems)} problems")

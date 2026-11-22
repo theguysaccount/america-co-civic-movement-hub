@@ -5,8 +5,17 @@
   "tagline": "Three free public tools with no account: a receipt for your federal taxes, every federal rule open for public comment, and a clear FOIA request you can send today.",
   "repo": "theguysaccount/america-co-civic-movement-hub",
   "default_url": "https://theguysaccount.github.io/america-co-civic-movement-hub",
-  "indexable": false,
+  "indexable": "auto",
+  "indexable_why": "auto = staged (noindex everywhere) at a github.io address, live at the site's own address. The repository variable SITE_INDEXABLE=true|false decides by hand instead.",
+  "original_name": "America.co",
   "original_url": "https://america.co/taxpayer-receipt",
+  "duplicates_of_original": {
+    "/taxpayer-receipt/": "https://america.co/taxpayer-receipt",
+    "/comment-deadlines/": "https://america.co/public-comment-deadlines",
+    "/comment-deadlines/*": "https://america.co/comment-calendar",
+    "/foia-request-builder/": "https://america.co/foia-request-builder"
+  },
+  "duplicates_why": "America.co serves its own taxpayer receipt, FOIA request builder and comment-deadline list, and since November 2026 a comment calendar with a page per agency, per month and per notice. The receipt tool, the FOIA builder and every comment-deadline page here repeat those, so they stay noindex and out of the sitemap, and each links to America.co's page. America.co has no page per spending line (its /taxpayer-receipt/<line> answers 404), so the 19 spending-line pages, the home page, sources, about and data are indexed once the site is live. This site adds to the original and never replaces it.",
   "user_agent": "AmericaPublicToolsStatic/1.0 (+https://github.com/theguysaccount/america-co-civic-movement-hub)",
   "first_fiscal_year": 2015,
   "min_fiscal_years": 5,

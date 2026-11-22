@@ -1,7 +1,7 @@
 # America.co Public Tools (static edition)
 
-**Staged copy:** https://theguysaccount.github.io/america-co-civic-movement-hub/ (not indexed).
-**Live original:** https://america.co (unchanged; the cutover is a separate decision, see [OPERATIONS.md](OPERATIONS.md)).
+**This site:** https://theguysaccount.github.io/america-co-civic-movement-hub/ (staged and not indexed until it has an address of its own).
+**The original:** https://america.co (unchanged). This site adds to it and never replaces it. How the address and the indexing are set: [OPERATIONS.md](OPERATIONS.md).
 
 Three free civic tools that need no account and no server:
 
@@ -24,7 +24,7 @@ Python's standard library reads the two public APIs and writes a static site. No
 | `civictools/refresh.py` | Runs the sources independently; `data/status.json` |
 | `civictools/build.py`, `og.py` | The static site, search index, CSV/JSON, calendar file, feed, embed, share cards |
 | `civictools/guard.py`, `e2e.py`, `selftest.py`, `linkcheck.py` | Pre-deploy checks, browser check, live check, weekly reference-link check |
-| `config/site.json`, `config/functions.json` | Base URL default, staged/indexable flag, limits; plain descriptions of the budget functions |
+| `config/site.json`, `config/functions.json` | Base URL default for local builds, the indexing rule, the pages America.co already serves, limits; plain descriptions of the budget functions |
 | `data/` | The last good read of each source. Committed by the daily job |
 
 ## Run it

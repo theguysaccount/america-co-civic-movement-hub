@@ -3,8 +3,9 @@
   python3 -m civictools.build [--site _site]
 
 Environment (all optional):
-  SITE_URL          public base URL: the one setting to change at cutover
-  SITE_INDEXABLE    "true" to allow indexing (the staged copy is noindex by default)
+  SITE_URL          public base URL, the one setting that moves the site. At a github.io address the
+                    site is staged (noindex everywhere); at its own address it is live
+  SITE_INDEXABLE    "true" or "false" to decide that by hand instead
   GOATCOUNTER_URL   privacy-friendly page counts
   SPONSOR_URL, SPONSOR_NAME   the one marked sponsor slot
 """
@@ -22,7 +23,7 @@ from html import escape as E
 from urllib.parse import urlsplit
 
 from . import receipt
-from .common import ROOT, clip, eastern_today, human_date, indexable, iso, load_config, money, now_utc, parse_iso, read_json, short_date, site_url
+from .common import ROOT, clip, duplicate_of, eastern_today, human_date, indexable, iso, load_config, money, now_utc, parse_iso, read_json, short_date, site_url
 from .refresh import path as data_file
 
 DEFAULT_AMOUNT = 1_000_000          # $10,000.00, in cents
@@ -81,7 +82,17 @@ class Site:
     def page(self, path, title, description, body, *, hero="", jsonld=None, nav="", listed=True, og=None, lastmod="", extra_head="", bare=False):
         canonical = self.url + path
         full = title if "America.co" in title else f"{title} | America.co Public Tools"
-        robots = "" if (self.indexable and listed) else '<meta name="robots" content="noindex, nofollow">\n'
+        original = duplicate_of(self.cfg, path) if listed else ""
+        mirror = bool(original)
+        if mirror and self.indexable:  # the original already serves this page: keep it out of search, let crawlers follow its links
+            robots = '<meta name="robots" content="noindex, follow">\n'
+        else:
+            robots = "" if (self.indexable and listed) else '<meta name="robots" content="noindex, nofollow">\n'
+        origin = ""
+        if mirror:
+            shown = original.split("://", 1)[-1].rstrip("/")
+            origin = (f'<p class="origin">{E(self.cfg["original_name"])} has its own version of this page: '
+                      f'<a href="{E(original)}" rel="noopener">{E(shown)}</a>. This static edition adds to the original and does not replace it.</p>')
         ld = ""
         for block in jsonld or []:
             safe = json.dumps(block, ensure_ascii=False).replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
@@ -142,6 +153,7 @@ class Site:
 {hero}
 <main id="main"><div class="wrap">
 {body}
+{origin}
 {slot}
 </div></main>
 <footer class="foot"><div class="wrap"><div class="cols">
@@ -168,7 +180,7 @@ Not affiliated with the Treasury, the Federal Register or any agency.</p>
         if rel.endswith("/") or rel == "":
             rel += "index.html"
         self.write(rel, html)
-        if listed and self.indexable:
+        if listed and self.indexable and not mirror:
             self.urls.append((canonical, lastmod or iso(self.now)[:10]))
 
 

@@ -2,9 +2,10 @@
 
 Everything runs on GitHub Actions in `theguysaccount/america-co-civic-movement-hub`. No human has a job here.
 
-- Staged copy: https://theguysaccount.github.io/america-co-civic-movement-hub/ (noindex).
-- Live original: https://america.co (`/taxpayer-receipt`, `/public-comment-deadlines`, `/foia-request-builder`), on
-  Vercel. Not touched, and its repositories are not this one.
+- This site: https://theguysaccount.github.io/america-co-civic-movement-hub/. Still staged (noindex) on 2026-11-22,
+  because it has no address of its own yet. It will sit beside the original and never replace it.
+- The original: https://america.co (`/taxpayer-receipt`, `/public-comment-deadlines`, `/comment-calendar`,
+  `/foia-request-builder`), on Vercel. Not touched, and its repositories are not this one.
 
 ## Automated jobs
 
@@ -54,36 +55,76 @@ and commits nothing.
   `stale_after_hours`, `max_receipt_amount`).
 - **Line descriptions:** `config/functions.json`.
 
-## Cutover: taking this out of staging (Jack decides)
+## Where the site lives, and how to give it its own address
 
-Current state, checked 2026-11-10: `america.co` uses Vercel nameservers (`ns1/ns2.vercel-dns.com`). The apex has
-`A 216.150.1.1`, `www` is a CNAME to a Vercel address, and a wildcard sends every other name (including
-`tools.america.co`) to `cname.vercel-dns-0.com.`, where nothing answers. The three original tools are paths on the
-main site, so this static site cannot replace them by DNS alone; it goes beside them on a subdomain.
+**Standing rule: never replace, only build on top.** This site goes beside America.co on a name of its own. Nothing
+here points America.co's hostnames at this site or redirects its pages here, and no step below asks for that.
+
+Current state, checked 2026-11-22:
+- The site is served at its github.io address. No Pages custom domain and no repository variables are set.
+- `america.co` uses Vercel nameservers (`ns1/ns2.vercel-dns.com`). The apex and `www` go to Vercel, and a wildcard
+  sends every other name, `tools.america.co` included, to `cname.vercel-dns-0.com.`, where nothing answers.
+- So the DNS record below has to be added in Vercel, by someone who can sign in to the team that owns `america.co`.
+  That is the one human step, and it is why the site is still at github.io.
+
+**One setting moves the site: the Pages custom domain.** Every workflow run asks GitHub which address the site is
+served at (`.github/scripts/site-url.sh`) and builds each link, canonical, share link, embed snippet, the feed, the
+calendar file, robots.txt and the sitemap for it. The repository variable `SITE_URL` is used instead when it is
+set, so leave it unset.
+
+To give the site `tools.america.co` (any other name works the same way):
 
 1. **DNS** (Vercel → the team that owns `america.co` → Domains → `america.co` → DNS Records): add
    `CNAME  tools  →  theguysaccount.github.io.`
-   A named record takes precedence over the wildcard. Change nothing else.
-2. **GitHub Pages:** repository Settings → Pages → Custom domain → `tools.america.co` → Save. Wait for the
-   certificate, then tick "Enforce HTTPS".
-   CLI: `gh api -X PUT repos/theguysaccount/america-co-civic-movement-hub/pages -f cname=tools.america.co`
-3. **The base-URL setting:**
-   `gh variable set SITE_URL --body "https://tools.america.co" -R theguysaccount/america-co-civic-movement-hub`
-4. **The indexing setting:**
-   `gh variable set SITE_INDEXABLE --body true -R theguysaccount/america-co-civic-movement-hub`
-5. Actions → Refresh and deploy → Run workflow (refresh unticked). Canonical links, sitemap, robots.txt, the feed,
-   the calendar file, share links, the embed snippet and IndexNow all follow the two settings. The weekly checks
-   confirm the live state matches.
-6. **In america.co's own repository (not this one, and not by this job):** redirect `/taxpayer-receipt`,
-   `/public-comment-deadlines` and `/foia-request-builder` to the matching pages here, so the two do not compete in
-   search. Until then, leave `SITE_INDEXABLE` unset.
-7. **Roll back:** delete the `tools` CNAME, clear the Pages custom domain, delete the two variables, run the workflow.
+   A named record takes precedence over the wildcard. Change nothing else. This Mac's resolver caches, so check
+   from outside it:
+   `curl -s "https://dns.google/resolve?name=tools.america.co&type=CNAME"`
+2. **Pages custom domain:**
+   `gh api -X PUT repos/theguysaccount/america-co-civic-movement-hub/pages -f cname=tools.america.co`
+3. **Wait for the certificate, then enforce HTTPS.** Repeat the first command until it prints `approved`:
+   `gh api repos/theguysaccount/america-co-civic-movement-hub/pages --jq .https_certificate.state`
+   `gh api -X PUT repos/theguysaccount/america-co-civic-movement-hub/pages -F https_enforced=true`
+4. **Rebuild for the new address:**
+   `gh workflow run "Refresh and deploy" -R theguysaccount/america-co-civic-movement-hub -f refresh=false`
+   From step 2 until this run finishes, the new name serves the old build, whose stylesheet and links still point
+   at the github.io address. Do steps 2 to 4 in one sitting.
+5. **Check:**
+   `gh workflow run "Weekly checks" -R theguysaccount/america-co-civic-movement-hub`
+   It fails if the live pages, robots.txt or sitemap are not what this repository is configured for.
+
+That is all. At its own address the site is live: there is no separate indexing step.
+
+To go back to the github.io address: clear the custom domain with
+`gh api -X PUT repos/theguysaccount/america-co-civic-movement-hub/pages --input - <<< '{"cname":null}'`, run step 4, then remove the DNS record.
+
+A name on a domain whose DNS is at Namecheap (`notaxation.org` and `civicsight.io` are owned and fit) needs no Vercel
+sign-in: add the same CNAME there and use that name in steps 2 to 5.
+
+## What search engines may index
+
+- **Staged at a github.io address, live at its own.** Staged means every page is `noindex`, robots.txt disallows
+  everything, there is no sitemap and IndexNow is skipped. `"indexable": "auto"` in `config/site.json` is that rule.
+- **To go live at the github.io address without waiting for a name:**
+  `gh variable set SITE_INDEXABLE --body true -R theguysaccount/america-co-civic-movement-hub`, then step 4. `false` takes a live site out of search.
+- **Pages America.co already serves stay `noindex` when the site is live.** They also stay out of the sitemap and are
+  never sent to IndexNow, and each shows a line that points to America.co's page. They are listed in
+  `config/site.json` under `duplicates_of_original`:
+  - `/taxpayer-receipt/`, because America.co has `/taxpayer-receipt`;
+  - every page under `/comment-deadlines/`, because America.co has `/public-comment-deadlines` and, since November
+    2026, `/comment-calendar` with a page per agency, per month and per notice;
+  - `/foia-request-builder/`, because America.co has `/foia-request-builder`.
+- **Indexable because only this site has them:** the home page (America.co's `/tools` is an unclaimed placeholder),
+  the 19 spending-line pages with their history since fiscal year 2015 (America.co's `/taxpayer-receipt/<line>`
+  answers 404), sources, about and data. That is 23 pages.
+- **When America.co starts serving something this site indexes**, such as a page per spending line, add that path to
+  `duplicates_of_original` and push. A key ending in `*` covers every path under it. The guard refuses a live build
+  in which a listed duplicate is indexable or in the sitemap, or an indexable page is missing from the sitemap.
+  America.co grows quickly: its comment calendar did not exist when this site was built two weeks earlier.
 
 ## Keys Jack can turn later
 
-1. **Custom domain / cutover.** Above. Other owned names that fit: `notaxation.org` (the taxpayer receipt),
-   `civicsight.io` (the government-data tools). Either can be the Pages custom domain instead of `tools.america.co`
-   with the same four steps.
+1. **The site's own address.** Above. It needs one DNS record in Vercel, or a name on `notaxation.org` (the taxpayer
+   receipt) or `civicsight.io` (the government-data tools), which are owned and whose DNS a session can reach.
 2. **Money: a sponsor or grant.** One marked slot at the foot of every page, off until both are set:
    `gh variable set SPONSOR_URL --body "https://<sponsor>" -R theguysaccount/america-co-civic-movement-hub`
    `gh variable set SPONSOR_NAME --body "<Sponsor name>" -R theguysaccount/america-co-civic-movement-hub`
@@ -96,7 +137,8 @@ main site, so this static site cannot replace them by DNS alone; it goes beside 
 5. **FOIA office addresses.** FOIA.gov's agency API needs a free api.data.gov key. With a `FOIA_API_KEY` secret the
    daily job could fetch each office's submission address so the builder fills in "To:". Not built: it adds a secret,
    and a wrong address is worse than a link to FOIA.gov.
-6. **Search Console** after cutover: verify the domain with a DNS TXT record and submit `/sitemap.xml`.
+6. **Search Console**, once the site has its own address: verify the name and submit `/sitemap.xml`. Needs a Google
+   account, so it is a human step.
 
 ## Costs
 $0. Public repository, GitHub-hosted runners (about two minutes a day), GitHub Pages, no keys.

@@ -160,23 +160,83 @@ class Built(fixtures.TempData, unittest.TestCase):
                 if fn.endswith(".html"):
                     self.assertIn('<meta name="robots" content="noindex, nofollow">', page(dirpath, fn), fn)
 
-    def test_cutover_is_two_settings(self):
-        out = self.build(SITE_URL="https://tools.example.org", SITE_INDEXABLE="true")
+    def test_its_own_address_takes_the_site_live_and_pages_the_original_serves_stay_out_of_search(self):
+        os.environ["SITE_URL"] = "https://tools.example.org"        # the one setting; SITE_INDEXABLE is not set
+        try:
+            out = build.build(self.site, now=fixtures.when(10, 12))
+            errors, _ = guard.check(self.site)
+        finally:
+            os.environ.pop("SITE_URL", None)
         self.assertTrue(out["indexable"])
+        self.assertEqual([e for e in errors if "og/" not in e], [], "the guard's own live-site rules hold")
         home = page(self.site, "index.html")
-        self.assertNotIn("noindex", home)
+        self.assertNotIn("noindex", home, "America.co has no hub page for these three tools")
         self.assertIn('<link rel="canonical" href="https://tools.example.org/">', home)
         self.assertIn('href="/static/style.css"', home)
         self.assertNotIn("github.io", home)
+        duplicates = ["taxpayer-receipt/index.html", "comment-deadlines/index.html", "comment-deadlines/closing-soon/index.html",
+                      "comment-deadlines/proposed-rules/index.html", "comment-deadlines/agencies/index.html", "foia-request-builder/index.html"]
+        for rel in duplicates:
+            html = page(self.site, rel)
+            self.assertIn('<meta name="robots" content="noindex, follow">', html, rel)
+            self.assertIn('<p class="origin">America.co has its own version of this page: <a href="https://america.co/', html, rel)
+        self.assertIn('href="https://america.co/public-comment-deadlines"', page(self.site, "comment-deadlines/index.html"))
+        self.assertIn('href="https://america.co/comment-calendar"', page(self.site, "comment-deadlines/agencies/index.html"))
+        for rel in ("taxpayer-receipt/medicare/index.html", "method/index.html", "about/index.html", "data/index.html"):
+            self.assertNotIn("noindex", page(self.site, rel), rel)
+            self.assertNotIn('class="origin"', page(self.site, rel), rel)
         sitemap = page(self.site, "sitemap.xml")
-        self.assertIn("<loc>https://tools.example.org/taxpayer-receipt/</loc>", sitemap)
+        self.assertIn("<loc>https://tools.example.org/</loc>", sitemap)
         self.assertIn("<loc>https://tools.example.org/taxpayer-receipt/medicare/</loc>", sitemap)
+        self.assertNotIn("<loc>https://tools.example.org/taxpayer-receipt/</loc>", sitemap)
+        self.assertNotIn("/comment-deadlines/", sitemap)
+        self.assertNotIn("/foia-request-builder/", sitemap)
         self.assertNotIn("/embed/", sitemap)
         self.assertNotIn("404", sitemap)
+        self.assertEqual(len(page(self.site, "urls.txt").split()), sitemap.count("<loc>"), "IndexNow is told about the same pages as the sitemap")
         self.assertIn('<meta name="robots" content="noindex, nofollow">', page(self.site, "embed/receipt/index.html"), "the embed never competes with the tool")
         self.assertIn("Disallow: /embed/", page(self.site, "robots.txt"))
+        self.assertIn("Sitemap: https://tools.example.org/sitemap.xml", page(self.site, "robots.txt"))
         self.assertIn("https://tools.example.org/embed/receipt/", page(self.site, "taxpayer-receipt/index.html"))
         self.assertIn('"base":"https://tools.example.org"', page(self.site, "taxpayer-receipt/index.html"))
+
+    def test_the_indexing_switch_can_also_be_set_by_hand(self):
+        out = self.build(SITE_URL="https://tools.example.org", SITE_INDEXABLE="false")
+        self.assertFalse(out["indexable"], "held back at its own address")
+        self.assertIn('<meta name="robots" content="noindex, nofollow">', page(self.site, "taxpayer-receipt/medicare/index.html"))
+        self.assertFalse(os.path.exists(os.path.join(self.site, "sitemap.xml")))
+        out = self.build(SITE_INDEXABLE="true")
+        self.assertTrue(out["indexable"], "live at the github.io address")
+        self.assertNotIn("noindex", page(self.site, "taxpayer-receipt/medicare/index.html"))
+        self.assertIn('<meta name="robots" content="noindex, follow">', page(self.site, "taxpayer-receipt/index.html"), "still a duplicate of the original")
+
+    def test_the_guard_refuses_a_live_build_that_would_index_a_duplicate_or_hide_a_page(self):
+        os.environ["SITE_URL"] = "https://tools.example.org"
+        try:
+            build.build(self.site, now=fixtures.when(10, 12))
+            path = os.path.join(self.site, "foia-request-builder", "index.html")
+            original = page(self.site, "foia-request-builder/index.html")
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(original.replace('<meta name="robots" content="noindex, follow">\n', ""))
+            errors, _ = guard.check(self.site)
+            self.assertTrue(any("foia-request-builder/index.html: the original already serves this page" in e for e in errors), errors[:5])
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(original)
+            text = page(self.site, "sitemap.xml")
+            with open(os.path.join(self.site, "sitemap.xml"), "w", encoding="utf-8") as f:
+                f.write(text.replace("<url><loc>https://tools.example.org/data/</loc>", "<url><loc>https://tools.example.org/taxpayer-receipt/</loc>", 1))
+            errors, _ = guard.check(self.site)
+            self.assertTrue(any("data/index.html: an indexable page is missing from the sitemap" in e for e in errors), errors[:5])
+            self.assertTrue(any("taxpayer-receipt/index.html: a noindex page is listed in the sitemap" in e for e in errors), errors[:5])
+        finally:
+            os.environ.pop("SITE_URL", None)
+
+    def test_duplicate_pages_point_to_the_original_while_staged_too(self):
+        self.build()
+        self.assertIn('<p class="origin">America.co has its own version of this page', page(self.site, "taxpayer-receipt/index.html"))
+        self.assertIn('<meta name="robots" content="noindex, nofollow">', page(self.site, "taxpayer-receipt/index.html"))
+        self.assertNotIn('class="origin"', page(self.site, "index.html"))
+        self.assertNotIn('class="origin"', page(self.site, "embed/receipt/index.html"))
 
     def test_a_failed_read_is_said_on_the_page_and_the_old_date_stays(self):
         self.read(12, mts_table_9=fixtures.table_9(break_year=2026), documents__json=fixtures.fr_open(first_day=12))

@@ -10,6 +10,7 @@ every page is noindex and no sitemap exists.
 """
 import json
 import os
+from html import unescape
 import re
 import sys
 from decimal import Decimal
@@ -17,7 +18,7 @@ from html.parser import HTMLParser
 from urllib.parse import urljoin, urlparse
 
 from . import receipt
-from .common import ROOT, indexable, load_config, read_json, site_url
+from .common import ROOT, duplicate_of, indexable, load_config, read_json, site_url
 from .refresh import path as data_file
 
 MUST = ["index.html", "404.html", "robots.txt", "urls.txt", "build.json", "static/style.css", "static/app.js", "static/favicon.svg",
@@ -137,8 +138,13 @@ def check(site_dir):
         with open(os.path.join(site_dir, "robots.txt"), encoding="utf-8") as f:
             if "Disallow: /\n" not in f.read():
                 errors.append("staged site must disallow crawling in robots.txt")
-    elif not os.path.exists(os.path.join(site_dir, "sitemap.xml")):
-        errors.append("missing sitemap.xml")
+    listed_urls = set()
+    if not staged:
+        try:
+            with open(os.path.join(site_dir, "sitemap.xml"), encoding="utf-8") as f:
+                listed_urls = {unescape(u) for u in re.findall(r"<loc>([^<]+)</loc>", f.read())}
+        except OSError:
+            errors.append("missing sitemap.xml")
 
     exists = {}
 
@@ -158,8 +164,18 @@ def check(site_dir):
                 text = f.read()
             if "<title>" not in text or 'name="description"' not in text or 'rel="canonical"' not in text:
                 errors.append(f"{rel}: missing title, description or canonical")
-            if (staged or rel.startswith("embed/")) and '<meta name="robots" content="noindex' not in text:
+            noindex = '<meta name="robots" content="noindex' in text
+            if (staged or rel.startswith("embed/")) and not noindex:
                 errors.append(f"{rel}: page that must stay out of search is missing noindex")
+            if not staged:
+                page_path = "/" + (rel[:-len("index.html")] if rel.endswith("index.html") else rel)
+                address = site_url(cfg) + page_path
+                if duplicate_of(cfg, page_path) and not noindex:
+                    errors.append(f"{rel}: the original already serves this page, so it must stay noindex")
+                if noindex and address in listed_urls:
+                    errors.append(f"{rel}: a noindex page is listed in the sitemap")
+                if not noindex and address not in listed_urls:
+                    errors.append(f"{rel}: an indexable page is missing from the sitemap")
             if len(re.findall(r"<h1[ >]", text)) != 1:
                 errors.append(f"{rel}: expected exactly one h1")
             if rel.startswith(("taxpayer-receipt/", "comment-deadlines/")) and not SOURCED.search(text):
